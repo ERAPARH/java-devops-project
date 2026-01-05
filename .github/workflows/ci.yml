@@ -1,0 +1,58 @@
+name: CI/CD Spring Boot Docker Minikube
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Java 17
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 3️⃣ Build jar
+      - name: Build Spring Boot jar
+        run: ./mvnw clean package -DskipTests
+
+      # 4️⃣ Docker login
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 5️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t eraparh/my-app:latest .
+
+      # 6️⃣ Push Docker image
+      - name: Push Docker image
+        run: |
+          docker push eraparh/my-app:latest
+
+      # 7️⃣ Deploy to Minikube on EC2
+      - name: Deploy to Minikube
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Pull latest image from DockerHub
+            docker pull eraparh/my-app:latest
+            
+            # Apply Kubernetes manifests
+            kubectl apply -f /home/ubuntu/java-devops-project/k8s/deployment.yaml
+            kubectl apply -f /home/ubuntu/java-devops-project/k8s/service.yaml
