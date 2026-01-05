@@ -21,6 +21,10 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # 🔧 FIX: mvnw permission
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       # 3️⃣ Build jar
       - name: Build Spring Boot jar
         run: ./mvnw clean package -DskipTests
@@ -34,13 +38,11 @@ jobs:
 
       # 5️⃣ Build Docker image
       - name: Build Docker image
-        run: |
-          docker build -t eraparh/my-app:latest .
+        run: docker build -t eraparh/my-app:latest .
 
       # 6️⃣ Push Docker image
       - name: Push Docker image
-        run: |
-          docker push eraparh/my-app:latest
+        run: docker push eraparh/my-app:latest
 
       # 7️⃣ Deploy to Minikube on EC2
       - name: Deploy to Minikube
@@ -50,9 +52,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Pull latest image from DockerHub
             docker pull eraparh/my-app:latest
-            
-            # Apply Kubernetes manifests
             kubectl apply -f /home/ubuntu/java-devops-project/k8s/deployment.yaml
             kubectl apply -f /home/ubuntu/java-devops-project/k8s/service.yaml
