@@ -135,5 +135,4 @@ Hariom Parmar**
 
 ---
 
-🔥 *This project represents a real-world DevOps implementation and hands-on learning experience.*
 
